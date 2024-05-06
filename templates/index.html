@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Weather Prediction Application</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300&family=Orbitron&family=Raleway:wght@200&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ysabeau+Office:wght@300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="parallax-container">
+        <div class="parallax"></div>
+        <div class="banner">
+            <div class="moon"></div>
+            <div class="text-container">
+                <h1>Welcome!!</h1>
+                <h2>To the Weather Prediction Application</h2>
+            </div>
+            <div class="mountain" id="m1"></div>
+            <div class="mountain" id="m2"></div>
+            <div class="mountain" id="m3"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="content">
+            <div class="card" id="input-card">
+                <div class="card-header">
+                    <h3>Predict Weather</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/predict" id="weather-form">
+                        <h4>Select Model:</h4>
+                        <select name="model_selection">
+                            <option value="knn" selected>KNN</option>
+                            <option value="fdt">Decision Tree</option>
+                            <option value="mlp">MLP</option>
+                        </select>
+                        <h4>Enter Weather Details:</h4>
+                        <input type="number" name="Temperature" placeholder="Temperature" required="required" step="any" />
+                        <input type="number" name="Humidity" placeholder="Humidity" required="required" step="any" />
+                        <input type="number" name="Pressure" placeholder="Pressure" required="required" step="any" />
+                        <input type="number" name="Wind_Speed" placeholder="Wind Speed" required="required" step="any" />
+                        <input type="number" name="Wind_Bearing" placeholder="Wind Bearing" required="required" step="any" />
+                        <input type="number" name="Visibility" placeholder="Visibility" required="required" step="any" />
+                        <input type="number" name="Month" placeholder="Month (1-12)" required="required" min="1" max="12" step="any" />
+                        <input type="number" name="Hour" placeholder="Hour (0-23)" required="required" min="0" max="23" step="any" />
+
+                        <button class="predict-button" type="submit">Predict</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="weather-card" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Weather Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="weather-info">
+                            <h1>Prediction:</h1>
+                            <h4 class="result-text" id="prediction-text">{{ prediction_text }}</h4>
+                        </div>
+                        <div id="input-info">
+                        <p>Temperature: <span class="input-value" id="temperature-value">{{ temperature_input }}</span> ºC</p>
+                        <p>Humidity: <span class="input-value" id="humidity-value">{{ humidity_input }}</span> millibars</p>
+                        <p>Pressure: <span class="input-value" id="pressure-value">{{ pressure_input }}</span></p>
+                        <p>Wind Speed: <span class="input-value" id="wind-speed-value">{{ wind_speed_input }} </span>km/hr</p>
+                        <p>Wind Bearing: <span class="input-value" id="wind-bearing-value">{{ wind_bearing_input }}</span> degrees</p>
+                        <p>Visibility: <span class="input-value" id="visibility-value">{{ visibility_input }}</span> km</p>
+                        <p>Month: <span class="input-value" id="month-value">{{ month_input }}</span></p>
+                        <p>Hour: <span class="input-value" id="hour-value">{{ hour_input }}</span> hrs</p>  
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        window.addEventListener("scroll", function() {
+            var moon = document.querySelector(".moon");
+            var mountains = document.querySelectorAll(".mountain");
+            var textContainer = document.querySelector(".text-container");
+            var parallax = document.querySelector(".parallax");
+            var offset = window.pageYOffset;
+
+            // Move the moon at a slower speed
+            moon.style.transform = "translateY(" + offset * 0.4 + "px)";
+
+            // Move each mountain at different speeds
+            mountains.forEach(function(mountain, index) {
+                var speed = 0.2 + index * 0.1; // Adjust the speed factor as needed
+                mountain.style.transform = "translateY(" + offset * speed + "px)";
+            });
+
+            // Move the text container at a faster speed
+            textContainer.style.transform = "translateY(" + offset * 0.5 + "px)";
+
+            // Smooth scroll for the parallax background at a medium speed
+            parallax.style.transform = "translate3d(0, " + offset * 0.6 + "px, 0)";
+        });
+        // JavaScript for form submission and showing the result card
+        document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("weather-form");
+        const inputCard = document.getElementById("input-card");
+        const weatherCard = document.getElementById("weather-card");
+
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: form.method,
+                body: formData
+            })
+            .then(response => response.json()) // Parse the response as JSON
+            .then(result => {
+                // Update the result card content
+                const predictionResultElement = document.querySelector("#weather-card .result-text");
+                predictionResultElement.textContent = `Weather Prediction: ${result.prediction_text}`;
+
+                // Show the weather details card and hide the input card
+                inputCard.style.display = "none";
+                weatherCard.style.display = "block";
+
+                // Update the input details
+                document.querySelector("#temperature-value").textContent = result.temperature_input;
+                document.querySelector("#humidity-value").textContent = result.humidity_input;
+                document.querySelector("#pressure-value").textContent = result.pressure_input;
+                document.querySelector("#wind-speed-value").textContent = result.wind_speed_input;
+                document.querySelector("#wind-bearing-value").textContent = result.wind_bearing_input;
+                document.querySelector("#visibility-value").textContent = result.visibility_input;
+                document.querySelector("#month-value").textContent = result.month_input;
+                document.querySelector("#hour-value").textContent = result.hour_input;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+    </script>
+</body>
+</html>
